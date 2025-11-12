@@ -30,6 +30,38 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  void _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor completa todos los campos'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.login(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (success && mounted) {
+      // Navegar al dashboard
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authProvider.error ?? 'Error en el login',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,16 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: authProvider.isLoading
                               ? null
-                              : () {
-                                  // Login logic (Stack Auth integration would go here)
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Login con Stack Auth pendiente de integración',
-                                      ),
-                                    ),
-                                  );
-                                },
+                              : _handleLogin,
                           child: authProvider.isLoading
                               ? const SizedBox(
                                   height: 20,
@@ -207,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          // Navigate to register
+                          Navigator.of(context).pushNamed('/register');
                         },
                         child: const Text(
                           'Regístrate',

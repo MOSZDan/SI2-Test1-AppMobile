@@ -22,6 +22,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  void _handleRegister() async {
+    // Validaciones
+    if (_nombreController.text.isEmpty ||
+        _apellidoController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor completa todos los campos'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Las contraseñas no coinciden'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La contraseña debe tener al menos 6 caracteres'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.register(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      nombre: _nombreController.text.trim(),
+      apellido: _apellidoController.text.trim(),
+    );
+
+    if (success && mounted) {
+      // Navegar al dashboard después del registro
+      Navigator.of(context).pushReplacementNamed('/dashboard');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authProvider.error ?? 'Error en el registro',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -216,16 +275,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: ElevatedButton(
                         onPressed: authProvider.isLoading
                             ? null
-                            : () {
-                                // Register logic (Stack Auth integration would go here)
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Registro con Stack Auth pendiente de integración',
-                                    ),
-                                  ),
-                                );
-                              },
+                            : _handleRegister,
                         child: authProvider.isLoading
                             ? const SizedBox(
                                 height: 20,

@@ -22,6 +22,73 @@ class AuthProvider with ChangeNotifier {
       _usuario?.rol?.descripcion == AppConstants.roleVendedor;
   bool get isCliente => _usuario?.rol?.descripcion == AppConstants.roleCliente;
 
+  // LOGIN FUNCIONAL
+  Future<bool> login({
+    required String email,
+    required String password,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final result = await AuthService.login(
+        email: email,
+        password: password,
+      );
+
+      // Crear usuario con datos del login
+      _usuario = Usuario(
+        codigo: result['user_id'] ?? result['id'] ?? 1,
+        email: email,
+        nombre: result['nombre'] ?? email.split('@')[0],
+        apellido: result['apellido'] ?? '',
+        fechaRegistro: DateTime.now(),
+      );
+
+      ApiService.setUserEmail(email);
+      _isAuthenticated = true;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      _isAuthenticated = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // REGISTER FUNCIONAL
+  Future<bool> register({
+    required String email,
+    required String password,
+    required String nombre,
+    required String apellido,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await AuthService.register(
+        email: email,
+        password: password,
+        nombre: nombre,
+        apellido: apellido,
+      );
+
+      // Login automático después del registro
+      return await login(email: email, password: password);
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> syncUser({
     required String stackUserId,
     required String email,
